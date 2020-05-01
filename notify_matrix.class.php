@@ -1,4 +1,10 @@
 <?php
+/**
+* @author	ViWa Invest GmbH
+* @datetime	01 May 2020
+* @purpose	Sending Messages to a matrix Webhook
+* @see		https://github.com/turt2live/matrix-appservice-webhooks		
+*/
 class notify_matrix {
 	function __CONSTRUCT($options = false) {
 		$this->_format = "plain";
@@ -6,23 +12,28 @@ class notify_matrix {
 		$this->_avatarUrl = "https://www.viwa.de/assets/img/v.png";
 		$this->_text = false;
 		$this->_webhookUrl = false;
+		
+		try {
+			if (is_array($options)) {
+				if(isset($options['format']))
+					$this->setFormat($options['format']);
 
-		if (is_array($options)) {
-			if(isset($options['format']))
-				$this->setFormat($options['format']);
+				if(isset($options['displayname']))
+					$this->setDisplayName($options['displayname']);	
 
-			if(isset($options['displayname']))
-				$this->setDisplayName($options['displayname']);	
+				if(isset($options['avatarurl']))
+					$this->setAvatarUrl($options['avatarurl']);	
 
-			if(isset($options['avatarurl']))
-				$this->setAvatarUrl($options['avatarurl']);	
+				if(isset($options['text']))
+					$this->setText($options['text']);	
 
-			if(isset($options['text']))
-				$this->setText($options['text']);	
-
-			if(isset($options['webhookurl']))
-				$this->setWebhookUrl($options['webhookurl']);													
-		}	
+				if(isset($options['webhookurl']))
+					$this->setWebhookUrl($options['webhookurl']);													
+			}	
+		}	catch (Exception $e) {
+			throw new Exception ($e->getMessage());
+		}
+		return $this;
 	}
 
 	function setText($text) {
@@ -31,7 +42,7 @@ class notify_matrix {
 	}
 
 	function setFormat($format) {
-		if(!in_array($format, array("html", "plain"))) throw new Exception('Wrong format');
+		if(!in_array($format, array("html", "plain"))) throw new Exception('Format must be one of html, plain');
 		$this->_format = $format;
 		return $this;
 	}
@@ -69,17 +80,37 @@ class notify_matrix {
 		return $this->_webhookUrl;
 	}
 
-	function send() {
-		if($this->getWebhookUrl()==false) throw new Exception("WebhookUrl missing", 1);
-
+	function _getMessage() {
 		$msg['text'] = $this->getText();
 		$msg['format'] = $this->getFormat();
 		$msg['displayName'] = $this->getDisplayName();
 		$msg['avatarUrl'] = $this->getAvatarUrl();
 
 		$json_msg = json_encode($msg);
-		print_r($json_msg);
+		return $json_msg;
 	}
+	
+	function send() {
+		if($this->getWebhookUrl()==false) throw new Exception("WebhookUrl missing", 1);
+		if(!function_exists('curl_version')) throw new Exception('php-curl is missing');
+		$ch = curl_init($this->getWebhookUrl());
+		curl_setopt($ch, CURLOPT_POST, 1);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $this->_getMessage());
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json')); 
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		$result = curl_exec($ch);
 
+		if(!curl_errno($ch)) {
+			switch ($http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE)) {
+				case 200:  # OK
+					return true;
+					break;
+				default:
+					throw new Exception('Unexpected curl http code: '. $http_code);
+			}
+		} else {
+			throw new Exception(curl_errno($ch));
+		}
+	}
 }
 ?>

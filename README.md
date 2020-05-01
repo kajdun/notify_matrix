@@ -5,10 +5,10 @@ PHP class for sending messages to Slack-compatible webhooks for Matrix. [Slack-c
 # Usage
 
 ```
-$options = array(	"format" => "html", 
-					"displayname" => "SomeOne", 
-					"text" => "Have a wonderful day!",
-					"webhookurl" => "https://example.com/api/v1/matrix/hook/123456");
+$options = array("format" => "html", 
+		 "displayname" => "SomeOne", 
+		 "text" => "Have a wonderful day!",
+		 "webhookurl" => "https://example.com/api/v1/matrix/hook/123456");
 
 try{
 	$notifier = new notify_matrix($options);
@@ -22,12 +22,12 @@ or
 
 ```
 try{
-	$notifier = new notify_matrix()
+	$notifier = new notify_matrix();
 	$notifier->setText("some Text")
-			 ->setFormat("plain")
-			 ->setDisplayName("Some Name")
-			 ->setWebhookUrl("https://URL_TO_WEBHOOK")
-			 ->send();
+	 	 ->setFormat("plain")
+		 ->setDisplayName("Some Name")
+		 ->setWebhookUrl("https://URL_TO_WEBHOOK")
+		 ->send();
 
 } catch (Exception $e) {
 	echo $e->getMessage();

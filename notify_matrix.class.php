@@ -1,11 +1,19 @@
 <?php
 /**
+* Sending Messages to a matrix Webhook
+*
 * @author	ViWa Invest GmbH
-* @datetime	01 May 2020
-* @purpose	Sending Messages to a matrix Webhook
+* @copyright (c) 2020, viwa.de
 * @see		https://github.com/turt2live/matrix-appservice-webhooks		
 */
 class notify_matrix {
+	/**
+	 * instantiate the class
+	 * 
+	 * @param array $options
+	 * @throws Exception
+	 * @return object
+	 */	
 	function __CONSTRUCT($options = false) {
 		$this->_format = "plain";
 		$this->_displayName = "Webhook";
@@ -36,51 +44,124 @@ class notify_matrix {
 		return $this;
 	}
 
-	function setText($text) {
+	/**
+	 * sets Text
+	 * 
+	 * @param string $text
+	 * @return object
+	 */	
+	public function setText($text) {
 		$this->_text = $text;
 		return $this;
 	}
 
-	function setFormat($format) {
+	/**
+	 * sets Text
+	 * 
+	 * @param string $format
+	 * @throws Exception
+	 * @return object
+	 */		
+	public function setFormat($format) {
 		if(!in_array($format, array("html", "plain"))) throw new Exception('Format must be one of html, plain');
 		$this->_format = $format;
 		return $this;
 	}
 
-	function setDisplayName($displayname) {
+	/**
+	 * sets displayname
+	 * 
+	 * @param string $displayname
+	 * @return object
+	 */	
+	public function setDisplayName($displayname) {
 		$this->_displayName = $displayname;
 		return $this;
 	}
 
-	function setAvatarUrl($url) {
+	/**
+	 * sets Avatar url
+	 * 
+	 * @param string $url
+	 * @throws Exception
+	 * @return object
+	 */	
+	public function setAvatarUrl($url) {
 		if (!filter_var($url, FILTER_VALIDATE_URL)) throw new Exception('AvatarUrl must be a URL');
 		$this->_avatarUrl = $url;
 		return $this;
 	}
 
-	function setWebhookUrl($url) {
+	/**
+	 * sets WebHook url
+	 * 
+	 * @param string $url
+	 * @throws Exception
+	 * @return object
+	 */	
+	public function setWebhookUrl($url) {
 		if (!filter_var($url, FILTER_VALIDATE_URL)) throw new Exception('WebhookUrl must be a URL');
 		$this->_webhookUrl = $url;		
 		return $this;
 	}
 
-	function getText() {
+	/**
+	 * Gets Text
+	 * 
+	 * @param void
+	 * @return string
+	 */	
+	public function getText() {
 		return $this->_text;
 	}
-	function getFormat() {
+
+	/**
+	 * Gets Format
+	 * 
+	 * @param void
+	 * @return string
+	 */	
+	public function getFormat() {
 		return $this->_format;
 	}
-	function getDisplayName() {
+
+	/**
+	 * Gets displayname
+	 * 
+	 * @param void
+	 * @return object
+	 */	
+	public function getDisplayName() {
 		return $this->_displayName;
 	}
-	function getAvatarUrl() {
+
+	/**
+	 * Gets Avatar url
+	 * 
+	 * @param void
+	 * @return string
+	 */	
+	public function getAvatarUrl() {
 		return $this->_avatarUrl;
 	}
-	function getWebhookUrl() {
+
+	/**
+	 * Gets Webhook url
+	 * 
+	 * @param void
+	 * @return string
+	 */	
+	public function getWebhookUrl() {
 		return $this->_webhookUrl;
 	}
 
-	function _getMessage() {
+	/**
+	 * Gets json encoded Message for http post request
+	 * 
+	 * @param void
+	 * @return string
+	 */	
+	private function _getMessage() {
 		$msg['text'] = $this->getText();
 		$msg['format'] = $this->getFormat();
 		$msg['displayName'] = $this->getDisplayName();
@@ -89,17 +170,30 @@ class notify_matrix {
 		$json_msg = json_encode($msg);
 		return $json_msg;
 	}
-	
-	function send() {
+
+	/**
+	 * Sends request
+	 * 
+	 * @param void
+	 * @throws Exception
+	 * @return bool
+	 */		
+	public function send() {
 		if($this->getWebhookUrl()==false) throw new Exception("WebhookUrl missing", 1);
-		if(!function_exists('curl_version')) throw new Exception('php-curl is missing');
+		if($this->getText()==false) throw new Exception("Message missing", 1);
+		if(!function_exists('curl_version')) throw new Exception('PHP curl extension is missing');
+
+		/** init curl object and set options */
 		$ch = curl_init($this->getWebhookUrl());
 		curl_setopt($ch, CURLOPT_POST, 1);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $this->_getMessage());
 		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json')); 
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+		/** execute api call */
 		$result = curl_exec($ch);
 
+		/** get http status code of the api call and handle errors*/
 		if(!curl_errno($ch)) {
 			switch ($http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE)) {
 				case 200:  # OK
